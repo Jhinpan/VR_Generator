@@ -1,8 +1,27 @@
 import random
 import uuid
+import speech_recognition as sr
 from google.cloud import dialogflowcx_v3beta1 as dialogflow
 from google.api_core.client_options import ClientOptions
 from google.oauth2 import service_account
+
+
+def listen():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        try:
+            audio = r.listen(source, timeout=5)  # Timeout set to 7 seconds
+        except sr.WaitTimeoutError:
+            return ""
+
+    try:
+        print("Recognizing...")
+        text = r.recognize_google(audio)
+        return text
+    except Exception as e:
+        print(e)
+        return ""
 
 
 def detect_intent_text(project_id, location, agent_id, session_id, texts, language_code):
@@ -33,7 +52,7 @@ def detect_intent_text(project_id, location, agent_id, session_id, texts, langua
         })
 
         print(
-            f"Generated {furniture['type']} in {furniture['color']} color, made of {furniture['material']} for the {furniture['location']}")
+            f"Generated {furniture['type']} in {furniture['color']} color, made of {furniture['material']} for the {furniture['placement']}")
 
     else:
         print("=" * 20)
@@ -57,7 +76,7 @@ def generate_furniture(attributes):
         attributes["material"] = random.choice(possible_materials)
 
     if attributes.get("placement") == "null":
-        attributes["location"] = random.choice(possible_placements)
+        attributes["placement"] = random.choice(possible_placements)
 
     return attributes
 
@@ -70,5 +89,6 @@ if __name__ == "__main__":
     language_code = "en"
 
     while True:
-        text = input("You: ")
-        detect_intent_text(project_id, location, agent_id, session_id, text, language_code)
+        text = listen()  # capture voice input here
+        if text:  # only if some text is recognized
+            detect_intent_text(project_id, location, agent_id, session_id, text, language_code)
